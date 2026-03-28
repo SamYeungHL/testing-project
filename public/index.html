@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sales List - Cloud Run</title>
+    <style>
+      :root {
+        --paper: #fbf8f2;
+        --ink: #1d1d1b;
+        --muted: #5b5b57;
+        --accent: #d95f02;
+        --line: #ddd5c7;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 12% 20%, #f8d7b7 0, transparent 35%),
+          radial-gradient(circle at 88% 10%, #d8efe1 0, transparent 30%),
+          linear-gradient(160deg, #f6efe4 0%, #fffaf2 45%, #f8f2e7 100%);
+      }
+      .container {
+        max-width: 1080px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 12px 40px rgba(80, 60, 40, 0.1);
+        backdrop-filter: blur(4px);
+        overflow: hidden;
+      }
+      .header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+      .title h1 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+      .title p {
+        margin: 0.35rem 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      button {
+        border: 0;
+        border-radius: 10px;
+        background: var(--accent);
+        color: white;
+        padding: 0.6rem 0.95rem;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      button:hover { filter: brightness(0.95); }
+      .actions {
+        display: flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+      }
+      .button-secondary {
+        background: #2d6a4f;
+      }
+      .button-whatsapp {
+        background: #128c7e;
+      }
+      .content {
+        padding: 1rem 1.25rem 1.25rem;
+      }
+      .meta {
+        margin-bottom: 0.85rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .table-wrap {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: auto;
+        max-height: 70vh;
+        background: #fff;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 680px;
+      }
+      th {
+        position: sticky;
+        top: 0;
+        background: #f6f1e7;
+        text-align: left;
+        padding: 0.7rem;
+        font-size: 0.85rem;
+        border-bottom: 1px solid var(--line);
+      }
+      td {
+        padding: 0.68rem 0.7rem;
+        border-bottom: 1px solid #efe8db;
+        font-size: 0.93rem;
+      }
+      tr:nth-child(even) td {
+        background: #fffcf6;
+      }
+      .qty {
+        font-weight: 700;
+        color: #7f2704;
+      }
+      .append {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px dashed var(--line);
+      }
+      .append form {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .append input {
+        flex: 1;
+        min-width: 160px;
+        padding: 0.5rem 0.6rem;
+        border: 1px solid #d8d1c3;
+        border-radius: 8px;
+      }
+      #append-result {
+        margin-top: 0.55rem;
+        font-size: 0.9rem;
+      }
+      .footer-link {
+        margin-top: 0.85rem;
+        font-size: 0.9rem;
+      }
+      @media (max-width: 640px) {
+        .header { padding: 1rem; }
+        .content { padding: 0.8rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <header class="header">
+          <div class="title">
+            <h1>Sales Item List</h1>
+            <p>Project: <strong>tokyo-griffin-446208-f7</strong> · Service: <strong>simple-site</strong></p>
+          </div>
+          <div class="actions">
+            <button id="refresh">Refresh Data</button>
+            <button id="export-xlsx" class="button-secondary">Export XLSX</button>
+            <button id="share-whatsapp" class="button-whatsapp">Share to WhatsApp</button>
+          </div>
+        </header>
+
+        <div class="content">
+          <div class="meta" id="stats">Loading...</div>
+          <div class="table-wrap" id="table-wrap">No data yet</div>
+
+          <section class="append">
+            <h3>Append row</h3>
+            <form id="append-form">
+              <input name="c1" type="text" placeholder="Column 1" />
+              <input name="c2" type="text" placeholder="Column 2" />
+              <input name="c3" type="text" placeholder="Column 3" />
+              <button type="submit">Append</button>
+            </form>
+            <div id="append-result"></div>
+          </section>
+
+          <p class="footer-link"><a href="https://console.cloud.google.com/run?project=tokyo-griffin-446208-f7" target="_blank" rel="noopener">Open in Cloud Console</a></p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      function findMonthYear(rows) {
+        for (const row of rows) {
+          for (const cell of row) {
+            if (typeof cell === 'string' && /^\d{1,2}\/\d{4}$/.test(cell.trim())) {
+              const [month, year] = cell.trim().split('/').map(Number);
+              if (month >= 1 && month <= 12) return { month, year };
+            }
+          }
+        }
+        return null;
+      }
+
+      function findDayHeaderRow(rows) {
+        for (const row of rows) {
+          const dayCount = row.slice(5).filter(v => {
+            const n = Number(v);
+            return Number.isInteger(n) && n >= 1 && n <= 31;
+          }).length;
+          if (dayCount >= 5) return row;
+        }
+        return null;
+      }
+
+      function parseRecords(values) {
+        const monthYear = findMonthYear(values);
+        const dayHeader = findDayHeaderRow(values);
+        if (!monthYear || !dayHeader) return [];
+
+        const records = [];
+        const { month, year } = monthYear;
+
+        for (const row of values) {
+          const itemName = String(row[0] || '').trim();
+          const itemId = String(row[1] || '').trim();
+          if (!itemName || !itemId) continue;
+
+          const looksLikeItem = /\d{8,}/.test(itemId) || String(row[4] || '').includes('HK$');
+          if (!looksLikeItem) continue;
+
+          for (let col = 5; col < row.length; col++) {
+            const qty = Number(row[col]);
+            if (!Number.isFinite(qty) || qty <= 0) continue;
+
+            const day = Number(dayHeader[col]);
+            if (!Number.isInteger(day) || day < 1 || day > 31) continue;
+
+            const date = new Date(year, month - 1, day);
+            if (Number.isNaN(date.getTime())) continue;
+
+            records.push({
+              itemName,
+              itemId,
+              date: date.toISOString().slice(0, 10),
+              quantity: qty
+            });
+          }
+        }
+
+        records.sort((a, b) => a.date.localeCompare(b.date) || a.itemName.localeCompare(b.itemName));
+        return records;
+      }
+
+      function renderRecords(records) {
+        const wrap = document.getElementById('table-wrap');
+        if (!records.length) {
+          wrap.textContent = 'No matching item rows found in this sheet.';
+          return;
+        }
+
+        let html = '<table><thead><tr><th>Item Name</th><th>Item ID</th><th>Date</th><th>Quantity</th></tr></thead><tbody>';
+        for (const row of records) {
+          html += `<tr><td>${escapeHtml(row.itemName)}</td><td>${escapeHtml(row.itemId)}</td><td>${row.date}</td><td class="qty">${row.quantity}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        wrap.innerHTML = html;
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      async function fetchSheet() {
+        const wrap = document.getElementById('table-wrap');
+        const appendForm = document.getElementById('append-form');
+        const appendResult = document.getElementById('append-result');
+        const stats = document.getElementById('stats');
+        wrap.textContent = 'Loading...';
+
+        const res = await fetch('/api/sheet');
+        if (!res.ok) {
+          wrap.textContent = 'Error fetching sheet: ' + (await res.text());
+          stats.textContent = 'Load failed';
+          return;
+        }
+
+        const data = await res.json();
+        const rows = data.values || [];
+        const records = parseRecords(rows);
+
+        if (data.source === 'xlsx') {
+          appendForm.style.display = 'none';
+          appendResult.style.color = '#5b5b57';
+          appendResult.textContent = 'Read-only mode: XLSX source is enabled.';
+        } else {
+          appendForm.style.display = '';
+          appendResult.textContent = '';
+        }
+
+        stats.textContent = `${records.length} record(s) from ${rows.length} source row(s)`;
+        renderRecords(records);
+      }
+
+      document.getElementById('refresh').addEventListener('click', fetchSheet);
+      document.getElementById('export-xlsx').addEventListener('click', () => {
+        window.location.href = '/api/export.xlsx';
+      });
+      document.getElementById('share-whatsapp').addEventListener('click', () => {
+        // Trigger download of XLSX file
+        window.location.href = '/api/export.xlsx';
+        // Open WhatsApp Web in a new tab to allow manual attachment
+        setTimeout(() => {
+          window.open('https://web.whatsapp.com/', '_blank', 'noopener');
+        }, 500);
+      });
+      document.getElementById('append-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const f = e.target;
+        const values = [f.c1.value, f.c2.value, f.c3.value];
+        const res = await fetch('/api/sheet/append', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ values })
+        });
+        const txt = document.getElementById('append-result');
+        if (!res.ok) {
+          txt.style.color = '#b00020';
+          txt.textContent = 'Error: ' + (await res.text());
+          return;
+        }
+        txt.style.color = '#1f6f43';
+        txt.textContent = 'Row appended';
+        f.reset();
+        fetchSheet();
+      });
+
+      fetchSheet().catch(() => {});
+    </script>
+  </body>
+</html>

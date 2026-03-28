@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+*.log
+.DS_Store
+
+# Service account keys
+sheets-key.json
+sheets-key-rotated.json
+*.pem
+*.p12
+
+# Build artifacts
+dist/
+build/
