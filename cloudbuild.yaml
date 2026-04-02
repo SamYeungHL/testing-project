@@ -9,7 +9,7 @@ steps:
       - --region=asia-northeast1
       - --platform=managed
       - --allow-unauthenticated
-      - --update-env-vars=SHEET_ID=1_ExnO3zKs67bxdEykIozwkt_KSz0BX5k-ve-d8svf0g
+      - --update-env-vars=XLSX_FILE_ID=1DJpgUfh_YejgVgHRo-RRhMqONEGjqw8r
       - --project=$PROJECT_ID
 
 options:
