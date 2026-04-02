@@ -1,19 +1,29 @@
-# Use official Node LTS image
-FROM node:18-bullseye-slim
+# --- Build stage ---
+FROM node:20-bullseye-slim AS builder
 
-# Create app directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Install app dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production || npm install --production
+RUN npm ci
 
-# Bundle app source
 COPY . .
+RUN npm run build
 
-# Use a non-root user for better security
+# --- Runtime stage ---
+FROM node:20-bullseye-slim
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=8080
+
+# Copy Next.js standalone output
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser || true
 USER appuser
 
 EXPOSE 8080
-CMD ["node", "index.js"]
+CMD ["node", "server.js"]

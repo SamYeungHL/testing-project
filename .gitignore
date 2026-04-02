@@ -1,8 +1,13 @@
 node_modules/
+package-lock.json
 .env
 .env.*
 *.log
 .DS_Store
+
+# Next.js
+.next/
+out/
 
 # Service account keys
 sheets-key.json
@@ -13,3 +18,6 @@ sheets-key-rotated.json
 # Build artifacts
 dist/
 build/
+
+# Backup of old Express app
+_backup/

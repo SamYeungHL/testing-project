@@ -1,13 +1,25 @@
 {
   "name": "simple-site",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
-    "start": "node index.js"
+    "dev": "GOOGLE_APPLICATION_CREDENTIALS=./sheets-key-rotated.json XLSX_FILE_ID=1DJpgUfh_YejgVgHRo-RRhMqONEGjqw8r next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port ${PORT:-8080}"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "googleapis": "latest",
-    "xlsx": "latest"
+    "googleapis": "^144.0.0",
+    "next": "^16.2.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.2.2",
+    "typescript": "^5.0.0"
   }
 }
