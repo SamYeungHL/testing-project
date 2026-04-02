@@ -1,0 +1,16 @@
+steps:
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - run
+      - deploy
+      - simple-site
+      - --source=.
+      - --region=asia-northeast1
+      - --platform=managed
+      - --allow-unauthenticated
+      - --update-env-vars=SHEET_ID=1_ExnO3zKs67bxdEykIozwkt_KSz0BX5k-ve-d8svf0g
+      - --project=$PROJECT_ID
+
+options:
+  logging: CLOUD_LOGGING_ONLY
